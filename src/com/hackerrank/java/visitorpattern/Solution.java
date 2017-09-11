@@ -1,7 +1,6 @@
 package com.hackerrank.java.visitorpattern;
 
-import java.util.ArrayList;
-import java.util.Scanner;
+import java.util.*;
 
 enum Color {
 	RED, GREEN
@@ -149,21 +148,49 @@ public class Solution {
 	 */
 	public static Tree solve() {
 		Scanner in = new Scanner(System.in);
-		int treeDepth = in.nextInt();
-		int[] nodeValues = new int[treeDepth];
-		int[] nodeColor = new int[treeDepth];
-		for (int i = 0; i < treeDepth; i++) {
-			nodeValues[i] = in.nextInt();
-		}
-		for (int i = 0; i < treeDepth; i++) {
-			nodeColor[i] = in.nextInt();
-		}
-		Tree root = new TreeNode(nodeValues[0], nodeColor[0] == 0 ? Color.RED : Color.GREEN, 0);
+		int treeElementCount = in.nextInt();
+		int[] treeElementValues = new int[treeElementCount];
+		int[] treeElementColors = new int[treeElementCount];
 
-		int i = 1;
-		while (in.hasNext()) {
+		List<Tree> listElements = new ArrayList<>();
 
+		Arrays.setAll(treeElementValues, i -> in.nextInt());
+		Arrays.setAll(treeElementColors, i -> in.nextInt());
+		in.nextLine();
+
+		Tree root = new TreeNode(treeElementValues[0], treeElementColors[0] == 0 ? Color.RED : Color.GREEN, 0);
+		listElements.add(root);
+
+		String scan;
+		while (in.hasNextLine()) {
+			scan = in.nextLine();
+			if (scan == null || scan.length() <= 0) { break; }
+
+			int[] nodes = Arrays.stream(scan.split(" ")).mapToInt(Integer::parseInt).toArray();
+			int firstNode = nodes[0] - 1;
+			int secondNode = nodes[1] - 1;
+			TreeLeaf leaf = new TreeLeaf(
+					treeElementValues[secondNode],
+					treeElementColors[secondNode] == 0 ? Color.RED : Color.GREEN,
+					listElements.get(firstNode).getDepth() + 1
+			);
+
+			if (listElements.get(firstNode) instanceof TreeNode) {
+				((TreeNode) listElements.get(firstNode)).addChild(leaf);
+			} else {
+				TreeNode node = new TreeNode(
+						listElements.get(firstNode).getValue(),
+						listElements.get(firstNode).getColor(),
+						listElements.get(firstNode).getDepth()
+				);
+
+				node.addChild(leaf);
+				listElements.set(firstNode, node);
+			}
+			listElements.add(leaf);
 		}
+
+		in.close();
 
 		return root;
 	}
