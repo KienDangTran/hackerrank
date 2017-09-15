@@ -1,6 +1,11 @@
-package com.hackerrank.java.visitorpattern;
+package com.hackerrank.java.advanced.visitorpattern;
 
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 enum Color {
 	RED, GREEN
@@ -125,7 +130,7 @@ class FancyVisitor extends TreeVis {
 	private int sumInGreenLeaves = 0; //sum of values stored in the tree's green leaf nodes
 
 	public int getResult() {
-		return sumInEvenNodes - sumInGreenLeaves;
+		return sumInGreenLeaves - sumInEvenNodes;
 	}
 
 	public void visitNode(TreeNode node) {
@@ -143,59 +148,58 @@ class FancyVisitor extends TreeVis {
 
 public class Solution {
 
-	/**
-	 * read the tree from STDIN and return its root as a return value of this function
-	 */
-	public static Tree solve() {
-		Scanner in = new Scanner(System.in);
-		int treeElementCount = in.nextInt();
-		int[] treeElementValues = new int[treeElementCount];
-		int[] treeElementColors = new int[treeElementCount];
+	static int N;
+	static HashMap<Integer, HashSet<Integer>> map = new HashMap<>();
+	static int[] values;
+	static int[] colors;
+	static boolean[] mark;
 
-		List<Tree> listElements = new ArrayList<>();
-
-		Arrays.setAll(treeElementValues, i -> in.nextInt());
-		Arrays.setAll(treeElementColors, i -> in.nextInt());
-		in.nextLine();
-
-		Tree root = new TreeNode(treeElementValues[0], treeElementColors[0] == 0 ? Color.RED : Color.GREEN, 0);
-		listElements.add(root);
-
-		String scan;
-		while (in.hasNextLine()) {
-			scan = in.nextLine();
-			if (scan == null || scan.length() <= 0) { break; }
-
-			int[] nodes = Arrays.stream(scan.split(" ")).mapToInt(Integer::parseInt).toArray();
-			int firstNode = nodes[0] - 1;
-			int secondNode = nodes[1] - 1;
-			TreeLeaf leaf = new TreeLeaf(
-					treeElementValues[secondNode],
-					treeElementColors[secondNode] == 0 ? Color.RED : Color.GREEN,
-					listElements.get(firstNode).getDepth() + 1
-			);
-
-			if (listElements.get(firstNode) instanceof TreeNode) {
-				((TreeNode) listElements.get(firstNode)).addChild(leaf);
-			} else {
-				TreeNode node = new TreeNode(
-						listElements.get(firstNode).getValue(),
-						listElements.get(firstNode).getColor(),
-						listElements.get(firstNode).getDepth()
-				);
-
-				node.addChild(leaf);
-				listElements.set(firstNode, node);
-			}
-			listElements.add(leaf);
+	public static Tree dfs(int vertex) {
+		if (map.get(vertex).isEmpty()) {
+			return new TreeLeaf(values[vertex], Color.values()[colors[vertex]], 0);
+		} else {
+			mark = new boolean[N];
+			return runDfs(vertex, 0);
 		}
-
-		in.close();
-
-		return root;
 	}
 
-	public static void main(String[] args) {
+	public static Tree runDfs(int vertex, int depth) {
+		mark[vertex] = true;
+		ArrayList<Tree> children = new ArrayList<>();
+		for (Integer e : map.get(vertex)) { if (!mark[e]) { children.add(runDfs(e, depth + 1)); } }
+		if (children.isEmpty()) { return new TreeLeaf(values[vertex], Color.values()[colors[vertex]], depth); } else {
+			TreeNode node = new TreeNode(values[vertex], Color.values()[colors[vertex]], depth);
+			for (Tree child : children) { node.addChild(child); }
+			return node;
+		}
+	}
+
+	public static Tree solve() throws IOException {
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		N = Integer.valueOf(br.readLine());
+		values = new int[N];
+		colors = new int[N];
+		int parent, child;
+		String[] chunks = br.readLine().split(" ");
+		for (int i = 0; i < N; i++) {
+			map.put(i, new HashSet<Integer>());
+			values[i] = Integer.valueOf(chunks[i]);
+		}
+		chunks = br.readLine().split(" ");
+		for (int i = 0; i < N; i++) { colors[i] = Integer.valueOf(chunks[i]); }
+		for (int i = 0, length = N - 1; i < length; i++) {
+			chunks = br.readLine().split(" ");
+			parent = Integer.valueOf(chunks[0]) - 1;
+			child = Integer.valueOf(chunks[1]) - 1;
+
+			map.get(parent).add(child);
+			map.get(child).add(parent);
+
+		}
+		return dfs(0);
+	}
+
+	public static void main(String[] args) throws IOException {
 		Tree root = solve();
 		SumInLeavesVisitor vis1 = new SumInLeavesVisitor();
 		ProductOfRedNodesVisitor vis2 = new ProductOfRedNodesVisitor();
